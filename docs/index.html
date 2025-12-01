@@ -18,10 +18,9 @@
 
     <style>
       :root {
-        --accent: #2563eb;
-        --text-muted: #475569;
-        --surface: #ffffff;
-        --border: #e2e8f0;
+        --gradient: linear-gradient(135deg, #0d1b2a, #161a30, #1b263b);
+        --accent: #8f7bff;
+        --text-muted: #cdd6f4;
       }
 
       html,
@@ -30,14 +29,13 @@
         margin: 0;
         display: flex;
         flex-direction: column;
-        color: #0f172a;
-        background: #f8fafc;
-        font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+        color: #e7ecf4;
+        background: #0d1b2a;
       }
 
       .main {
         flex-grow: 1;
-        background: #f8fafc;
+        background: var(--gradient);
       }
 
       #home {
@@ -49,10 +47,11 @@
       .bg-holder {
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at 12% 18%, rgba(37, 99, 235, 0.07), transparent 38%),
-          radial-gradient(circle at 82% 10%, rgba(15, 23, 42, 0.06), transparent 30%),
-          radial-gradient(circle at 60% 80%, rgba(37, 99, 235, 0.05), transparent 32%),
-          #f8fafc;
+        background: radial-gradient(circle at 20% 20%, rgba(143, 123, 255, 0.25), transparent 35%),
+          radial-gradient(circle at 80% 0%, rgba(104, 194, 255, 0.25), transparent 30%),
+          radial-gradient(circle at 60% 80%, rgba(255, 255, 255, 0.08), transparent 35%),
+          var(--gradient);
+        filter: blur(0px);
       }
 
       .container {
@@ -61,27 +60,22 @@
       }
 
       .navbar {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(8px);
-        border-bottom: 1px solid var(--border);
-        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.04);
+        background: rgba(13, 27, 42, 0.75);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       }
 
       .navbar-brand {
-        letter-spacing: -0.01em;
-        color: #0f172a;
-      }
-
-      .navbar-brand:hover {
-        color: var(--accent);
+        letter-spacing: 0.02em;
       }
 
       .hero-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        padding: 40px;
-        box-shadow: 0 20px 70px rgba(15, 23, 42, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 28px;
+        padding: 48px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(14px);
       }
 
       .hero-subtitle {
@@ -92,10 +86,10 @@
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        padding: 10px 16px;
+        padding: 12px 18px;
         border-radius: 9999px;
-        background: rgba(37, 99, 235, 0.08);
-        color: #0f172a;
+        background: rgba(143, 123, 255, 0.12);
+        color: #f6f7fb;
         font-weight: 600;
         letter-spacing: 0.01em;
       }
@@ -104,42 +98,34 @@
         width: 10px;
         height: 10px;
         border-radius: 50%;
-        background: var(--accent);
-        box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.15);
+        background: #68c2ff;
+        box-shadow: 0 0 12px rgba(104, 194, 255, 0.6);
       }
 
       .btn-primary {
         background-color: var(--accent);
         border-color: var(--accent);
-        color: #ffffff;
+        color: #0d1b2a;
         font-weight: 700;
-        box-shadow: 0 14px 30px rgba(37, 99, 235, 0.25);
+        box-shadow: 0 12px 30px rgba(143, 123, 255, 0.35);
       }
 
       .btn-primary:hover {
-        background-color: #1d4ed8;
-        border-color: #1d4ed8;
-        color: #ffffff;
+        background-color: #7a65f1;
+        border-color: #7a65f1;
+        color: #0d1b2a;
       }
 
       .btn-outline-light {
-        border-color: var(--border);
-        color: #0f172a;
-      }
-
-      .btn-outline-light:hover {
-        border-color: #cbd5e1;
-        background: #f1f5f9;
-        color: #0f172a;
+        border-color: rgba(255, 255, 255, 0.4);
+        color: #e7ecf4;
       }
 
       .badge-soft {
-        background: #f8fafc;
-        color: #0f172a;
-        border: 1px solid var(--border);
+        background: rgba(231, 236, 244, 0.1);
+        color: #f1f5f9;
         border-radius: 9999px;
         padding: 10px 14px;
-        font-weight: 600;
       }
 
       .feature {
@@ -152,19 +138,16 @@
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: var(--accent);
+        background: #68c2ff;
+        box-shadow: 0 0 12px rgba(104, 194, 255, 0.6);
         margin-top: 8px;
-      }
-
-      h1 {
-        letter-spacing: -0.02em;
       }
     </style>
   </head>
 
   <body>
     <main class="main" id="top">
-      <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3">
+      <nav class="navbar navbar-expand-lg navbar-dark fixed-top py-3">
         <div class="container">
           <a
             class="navbar-brand d-flex align-items-center fw-bold fs-3"
