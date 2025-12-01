@@ -1,6 +1,6 @@
 <div align="center">
    <img align="center" width="128px" src="https://github.com/wittg3n/cloudy/blob/master/src-tauri/icons/128x128%402x.png" />
-   <h1 align="center"><b> Cloudy |  Effortlessly Change Your DNS  with Tauri V2 + Next.js 🚀</b></h1>
+   <h1 align="center"><b> Cloudy |  Effortlessly Change Your DNS 🚀</b></h1>
    <h2 align="center">
 </div>
 <br />
