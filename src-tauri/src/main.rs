@@ -1,12 +1,11 @@
-
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-use tauri::{AppHandle, Manager};
-use std::process::Command;
-use std::collections::HashMap;
 use regex::Regex;
+use std::collections::HashMap;
+use std::process::Command;
+use tauri::{AppHandle, Manager};
 use tauri_plugin_log::{Builder as LogBuilder, Target, TargetKind};
 
-use log::{info, error, warn, debug};
+use log::{debug, error, info, warn};
 
 #[tauri::command]
 fn get_current_dns() -> Result<(String, String), String> {
@@ -15,12 +14,15 @@ fn get_current_dns() -> Result<(String, String), String> {
         .args(["/C", "ipconfig /all"])
         .output()
         .map_err(|e| {
-          error!("Failed to run ipconfig command: {}", e);
+            error!("Failed to run ipconfig command: {}", e);
             format!("Failed to run ipconfig: {}", e)
         })?;
 
     if !output.status.success() {
-        error!("ipconfig command failed with stderr: {}", String::from_utf8_lossy(&output.stderr));
+        error!(
+            "ipconfig command failed with stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
         return Err(format!(
             "ipconfig command failed: {}",
             String::from_utf8_lossy(&output.stderr)
@@ -31,18 +33,17 @@ fn get_current_dns() -> Result<(String, String), String> {
     let mut active_adapter = None;
     let mut dns_servers = Vec::new();
     let mut current_adapter = None;
-    let mut gateway_found = false;
-
-    let adapter_pattern = Regex::new(r"^(Ethernet|Wireless LAN) adapter (.+):").unwrap();
-    let gateway_pattern = Regex::new(r"Default Gateway.*: (\d+\.\d+\.\d+\.\d+)").unwrap();
-    let dns_pattern = Regex::new(r"DNS Servers.*: (\d+\.\d+\.\d+\.\d+)").unwrap();
+    let adapter_pattern = Regex::new(r"(?i)^.+ adapter (.+):$").unwrap();
+    let gateway_pattern = Regex::new(r"(?i)^default gateway.*: *(.*)$").unwrap();
+    let dns_pattern = Regex::new(r"(?i)^dns servers.*: *(.*)$").unwrap();
+    let ipv4_pattern = Regex::new(r"\b\d{1,3}(?:\.\d{1,3}){3}\b").unwrap();
 
     for line in output_str.lines() {
         let line = line.trim();
 
         if let Some(captures) = adapter_pattern.captures(line) {
-            current_adapter = Some(captures[2].to_string());
-            debug!("Found network adapter: {}", &captures[2]);
+            current_adapter = Some(captures[1].to_string());
+            debug!("Found network adapter: {}", &captures[1]);
             continue;
         }
 
@@ -54,23 +55,40 @@ fn get_current_dns() -> Result<(String, String), String> {
 
         if let Some(captures) = gateway_pattern.captures(line) {
             if let Some(adapter) = &current_adapter {
-                if captures[1] != *"0.0.0.0" {
-                    active_adapter = Some(adapter.clone());
-                    debug!("Gateway found for adapter: {}", adapter);
+                if let Some(ip_match) = ipv4_pattern.find(&captures[1]) {
+                    let gateway_ip = ip_match.as_str();
+                    if gateway_ip != "0.0.0.0" {
+                        if active_adapter.as_ref() != Some(adapter) {
+                            dns_servers.clear();
+                        }
+                        active_adapter = Some(adapter.clone());
+                        debug!("Gateway found for adapter: {}", adapter);
+                    }
                 }
             }
         }
 
-        if let Some(adapter) = &active_adapter {
+        if let Some(adapter) = &current_adapter {
             if let Some(captures) = dns_pattern.captures(line) {
-                dns_servers.push(captures[1].to_string());
-                debug!("DNS server found: {}", &captures[1]);
-            } else if dns_servers.len() > 0 && Regex::new(r"^\d+\.\d+\.\d+\.\d+$")
-                .unwrap()
-                .is_match(line)
-            {
-                dns_servers.push(line.to_string());
-                debug!("Additional DNS server found: {}", line);
+                if active_adapter.as_ref() != Some(adapter) {
+                    dns_servers.clear();
+                    active_adapter = Some(adapter.clone());
+                }
+
+                if let Some(ip_match) = ipv4_pattern.find(&captures[1]) {
+                    dns_servers.push(ip_match.as_str().to_string());
+                    debug!("DNS server found: {}", ip_match.as_str());
+                }
+                continue;
+            }
+
+            if let Some(active) = &active_adapter {
+                if active == adapter {
+                    if let Some(ip_match) = ipv4_pattern.find(line) {
+                        dns_servers.push(ip_match.as_str().to_string());
+                        debug!("Additional DNS server found: {}", ip_match.as_str());
+                    }
+                }
             }
         }
     }
@@ -127,7 +145,10 @@ fn change_dns(dns_name: String, interface_name: String) -> Result<String, String
         .expect("Failed to execute netsh command");
 
     if !primary_output.status.success() {
-        error!("Failed to set primary DNS: {}", String::from_utf8_lossy(&primary_output.stderr));
+        error!(
+            "Failed to set primary DNS: {}",
+            String::from_utf8_lossy(&primary_output.stderr)
+        );
         return Err(format!(
             "Failed to set primary DNS: {}",
             String::from_utf8_lossy(&primary_output.stderr)
@@ -146,7 +167,10 @@ fn change_dns(dns_name: String, interface_name: String) -> Result<String, String
         .expect("Failed to execute netsh command");
 
     if !secondary_output.status.success() {
-        error!("Failed to set secondary DNS: {}", String::from_utf8_lossy(&secondary_output.stderr));
+        error!(
+            "Failed to set secondary DNS: {}",
+            String::from_utf8_lossy(&secondary_output.stderr)
+        );
         return Err(format!(
             "Failed to set secondary DNS: {}",
             String::from_utf8_lossy(&secondary_output.stderr)
@@ -159,14 +183,20 @@ fn change_dns(dns_name: String, interface_name: String) -> Result<String, String
         .expect("Failed to execute ipconfig command");
 
     if !flush_output.status.success() {
-        error!("Failed to flush DNS: {}", String::from_utf8_lossy(&flush_output.stderr));
+        error!(
+            "Failed to flush DNS: {}",
+            String::from_utf8_lossy(&flush_output.stderr)
+        );
         return Err(format!(
             "Failed to flush DNS: {}",
             String::from_utf8_lossy(&flush_output.stderr)
         ));
     }
 
-    info!("DNS changed successfully to: {} (primary), {} (secondary)", primary_dns, secondary_dns);
+    info!(
+        "DNS changed successfully to: {} (primary), {} (secondary)",
+        primary_dns, secondary_dns
+    );
     Ok("DNS changed successfully".to_string())
 }
 
@@ -199,8 +229,17 @@ fn main() {
     info!("Starting Tauri application...");
 
     tauri::Builder::default()
-        .plugin(LogBuilder::new().target(Target::new(TargetKind::Stdout)).build())  
-        .invoke_handler(tauri::generate_handler![close_window, minimize_window, change_dns, get_current_dns])
+        .plugin(
+            LogBuilder::new()
+                .target(Target::new(TargetKind::Stdout))
+                .build(),
+        )
+        .invoke_handler(tauri::generate_handler![
+            close_window,
+            minimize_window,
+            change_dns,
+            get_current_dns
+        ])
         .run(tauri::generate_context!())
         .expect("Error while running Tauri application");
 
